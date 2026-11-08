@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Generador de códigos QR</title>
+<style>
+:root{--bg:#eef2f5;--card:#fff;--tx:#10263f;--mut:#4d5f73;--bd:#c9d3dd;--ac:#0f6b63;--on:#fff;--err:#b3261e;--warn:#8a5a00;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0c1520;--card:#142130;--tx:#e8eef5;--mut:#a3b3c4;--bd:#2f4156;--ac:#5fd3c4;--on:#06201c;--err:#ffb4ab;--warn:#f2c36b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0c1520;--card:#142130;--tx:#e8eef5;--mut:#a3b3c4;--bd:#2f4156;--ac:#5fd3c4;--on:#06201c;--err:#ffb4ab;--warn:#f2c36b;color-scheme:dark}
+html{background:var(--bg);scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 "Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:880px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;line-height:1.2;margin:8px 0 4px}
+h2{font-size:1.1rem;margin:0 0 12px}
+.lead,.hint,small{color:var(--mut)}
+.lead{margin:0 0 16px}
+.grid{display:grid;gap:16px}
+@media(min-width:820px){.grid{grid-template-columns:1fr 1fr;align-items:start}.sticky{position:sticky;top:16px}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:16px;margin-bottom:16px}
+.seg{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media(min-width:480px){.seg{grid-template-columns:repeat(4,1fr)}}
+button,input,select,textarea{font:inherit;color:var(--tx)}
+button{min-height:44px;padding:8px 14px;border-radius:8px;border:1px solid var(--bd);background:var(--card);cursor:pointer}
+button[aria-pressed="true"]{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700}
+.primary{background:var(--ac);color:var(--on);border-color:var(--ac);font-weight:700}
+.field{margin-bottom:12px}
+label{display:block;font-weight:600;margin-bottom:4px}
+input[type=text],input[type=url],input[type=tel],input[type=email],select,textarea{width:100%;box-sizing:border-box;min-height:44px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+input[type=color]{width:100%;min-height:44px;padding:2px;border:1px solid var(--bd);border-radius:8px;background:var(--bg)}
+.chk{display:flex;gap:10px;align-items:center;min-height:44px;font-weight:600}
+.chk input{width:24px;height:24px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+[aria-invalid="true"]{border-color:var(--err)!important}
+.err{color:var(--err);margin:4px 0 0;font-size:.9rem;min-height:0}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.stage{display:grid;place-items:center;min-height:200px;padding:16px;border:2px dashed var(--bd);border-radius:12px;text-align:center}
+.stage img{max-width:100%;height:auto;image-rendering:pixelated;border-radius:4px}
+.code{white-space:pre-wrap;word-break:break-all;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px;font:.85rem/1.4 ui-monospace,Menlo,Consolas,monospace;margin:8px 0}
+.warn{color:var(--warn)}
+ul{list-style:none;margin:0;padding:0}
+.hi{display:flex;gap:8px;align-items:stretch;margin-bottom:8px}
+.open{flex:1;display:flex;gap:12px;align-items:center;text-align:left}
+.open img{width:56px;height:56px;image-rendering:pixelated;flex:none}
+.badge{display:inline-block;margin-left:6px;padding:0 8px;border-radius:99px;background:var(--ac);color:var(--on);font-size:.8rem;font-weight:700}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>Generador de códigos QR</h1>
+<p class="lead">Crea códigos para carteles, menús y tarjetas. Todo se guarda solo en este dispositivo.</p>
+<div class="grid">
+<div>
+<section class="card" aria-labelledby="h-tipo">
+<h2 id="h-tipo">1. Elige qué contiene</h2>
+<div class="seg" id="seg"></div>
+</section>
+<section class="card" aria-labelledby="h-datos">
+<h2 id="h-datos">2. Rellena los datos</h2>
+<form id="fields" novalidate onsubmit="return false"></form>
+</section>
+<section class="card" aria-labelledby="h-op">
+<h2 id="h-op">3. Aspecto</h2>
+<div class="row">
+<div class="field"><label for="fg">Color del código</label><input type="color" id="fg"></div>
+<div class="field"><label for="bg">Color del fondo</label><input type="color" id="bg"></div>
+</div>
+<div class="row">
+<div class="field"><label for="size">Tamaño (px)</label><input type="text" id="size" inputmode="numeric" autocomplete="off" aria-describedby="e-size"><p class="err" id="e-size" aria-live="polite"></p></div>
+<div class="field"><label for="ec">Corrección de errores</label><select id="ec"><option value="L">L · 7 %</option><option value="M">M · 15 %</option><option value="Q">Q · 25 %</option><option value="H">H · 30 %</option></select></div>
+</div>
+<p class="hint" style="margin:0">Más corrección permite que el código se lea aunque esté dañado, pero lo hace más denso.</p>
+</section>
+</div>
+<div class="sticky">
+<section class="card" aria-labelledby="h-prev">
+<h2 id="h-prev">Vista previa</h2>
+<div class="stage" id="stage">
+<img id="img" alt="Código QR generado" hidden>
+<p id="ph" class="hint">Completa los datos para ver el código.</p>
+</div>
+<p id="tip" class="hint" hidden>Mantén pulsada la imagen para guardarla (clic derecho en ordenador).</p>
+<p id="info" class="hint" style="margin:4px 0" aria-live="polite"></p>
+<p id="warn" class="warn" style="margin:4px 0" hidden></p>
+<div id="code" class="code" hidden></div>
+<button class="primary" id="save" style="width:100%">Guardar en el historial</button>
+<p id="msg" class="hint" role="status" aria-live="polite" style="margin:8px 0 0"></p>
+</section>
+<section class="card" aria-labelledby="h-his">
+<h2 id="h-his">Historial</h2>
+<ul id="hist"></ul>
+<button id="clear" style="width:100%" hidden>Borrar todo el historial</button>
+</section>
+</div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script>
+(function(){
+var $=function(s){return document.querySelector(s)};
+var KEY='qrgen:v1';
+var TYPES={
+url:{n:'URL',f:[{id:'url',l:'Dirección web',t:'url',p:'https://tunegocio.es/menu'}]},
+text:{n:'Texto',f:[{id:'text',l:'Texto',k:'area',p:'Escribe el mensaje'}]},
+wifi:{n:'WiFi',f:[{id:'ssid',l:'Nombre de la red (SSID)'},{id:'pass',l:'Contraseña'},{id:'sec',l:'Seguridad',k:'sel',o:[['WPA','WPA/WPA2/WPA3'],['WEP','WEP'],['nopass','Sin contraseña']]},{id:'hid',l:'Red oculta',k:'chk'}]},
+vcard:{n:'Contacto',f:[{id:'nom',l:'Nombre'},{id:'ape',l:'Apellidos'},{id:'tel',l:'Teléfono',t:'tel',p:'+34 600 000 000'},{id:'mail',l:'Correo electrónico',t:'email'},{id:'org',l:'Empresa'},{id:'web',l:'Sitio web',t:'url'}]}
+};
+var S={type:'url',vals:{},opts:{fg:'#000000',bg:'#ffffff',size:'300',ec:'M'},hist:[],seeded:false};
+try{var r=JSON.parse(localStorage.getItem(KEY));if(r&&r.opts&&TYPES[r.type]){S=Object.assign(S,r)}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+if(!S.seeded){var d=new Date().toISOString();
+S.hist=[{id:1,ex:1,type:'url',vals:{url:'https://ejemplo.es/menu'},opts:{fg:'#000000',bg:'#ffffff',size:'300',ec:'M'},d:d},
+{id:2,ex:1,type:'wifi',vals:{ssid:'CafeEjemplo',pass:'clave1234',sec:'WPA',hid:false},opts:{fg:'#000000',bg:'#ffffff',size:'300',ec:'M'},d:d}];
+S.seeded=true;save()}
+if(typeof qrcode!=='undefined'&&qrcode.stringToBytesFuncs&&qrcode.stringToBytesFuncs['UTF-8'])qrcode.stringToBytes=qrcode.stringToBytesFuncs['UTF-8'];
+var touched={},attempted=false,cur=null;
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function eW(s){return s.replace(/([\\;,:"])/g,'\\$1')}
+function eV(s){return s.replace(/([\\;,])/g,'\\$1').replace(/\n/g,'\\n')}
+function encode(t,v){
+var e={},g=function(k){return String(v[k]||'').trim()},req=function(k){if(!g(k))e[k]='Este campo es obligatorio.'},s='';
+if(t==='url'){req('url');if(g('url')){var u=g('url');if(!/^[a-z][a-z0-9+.-]*:/i.test(u))u='https://'+u;
+try{var o=new URL(u);if(!/^https?:$/.test(o.protocol)||o.hostname.indexOf('.')<0)throw 0;s=u}catch(x){e.url='Introduce una dirección válida, por ejemplo https://tunegocio.es.'}}}
+else if(t==='text'){req('text');s=g('text')}
+else if(t==='wifi'){req('ssid');var sec=v.sec||'WPA';
+if(sec!=='nopass'){req('pass');if(g('pass')&&sec==='WPA'&&String(v.pass).length<8)e.pass='La clave WPA necesita al menos 8 caracteres.'}
+s='WIFI:T:'+sec+';S:'+eW(g('ssid'))+';'+(sec==='nopass'?'':'P:'+eW(String(v.pass||''))+';')+(v.hid?'H:true;':'')+';'}
+else{req('nom');
+if(g('tel')&&!/^\+?[\d\s().-]{6,20}$/.test(g('tel')))e.tel='Usa solo números, espacios y un + inicial (de 6 a 20 caracteres).';
+if(g('mail')&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(g('mail')))e.mail='Escribe un correo válido, por ejemplo nombre@dominio.es.';
+if(g('web')&&!/^(https?:\/\/)?[^\s.]+\.[^\s]+$/.test(g('web')))e.web='Introduce una dirección válida.';
+s=['BEGIN:VCARD','VERSION:3.0','N:'+eV(g('ape'))+';'+eV(g('nom'))+';;;','FN:'+eV((g('nom')+' '+g('ape')).trim()),
+g('org')&&'ORG:'+eV(g('org')),g('tel')&&'TEL;TYPE=CELL:'+g('tel'),g('mail')&&'EMAIL:'+g('mail'),g('web')&&'URL:'+g('web'),'END:VCARD'].filter(Boolean).join('\n')}
+return{s:s,e:e}}
+function chkSize(x){x=String(x).trim();
+if(!x)return'Indica un tamaño.';
+if(/^-/.test(x))return'El tamaño no puede ser negativo.';
+if(!/^\d+$/.test(x))return'Escribe solo un número entero, sin letras ni decimales.';
+var n=+x;if(n<100||n>1000)return'El tamaño debe estar entre 100 y 1000 px.';return''}
+function build(text,ec){var q=qrcode(0,ec);q.addData(text);q.make();return q}
+function paint(q,o,size){var n=q.getModuleCount(),m=4,k=Math.max(1,Math.floor(size/(n+2*m))),w=k*(n+2*m),c=document.createElement('canvas');
+c.width=c.height=w;var x=c.getContext('2d');x.fillStyle=o.bg;x.fillRect(0,0,w,w);x.fillStyle=o.fg;
+for(var i=0;i<n;i++)for(var j=0;j<n;j++)if(q.isDark(i,j))x.fillRect((j+m)*k,(i+m)*k,k,k);return c}
+function lum(h){var a=[1,3,5].map(function(i){var c=parseInt(h.substr(i,2),16)/255;return c<=.03928?c/12.92:Math.pow((c+.055)/1.055,2.4)});return .2126*a[0]+.7152*a[1]+.0722*a[2]}
+function ratio(a,b){var x=lum(a),y=lum(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05)}
+function fmt(iso){return new Date(iso).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function summary(h){var v=h.vals;return h.type==='wifi'?'Red '+(v.ssid||''):h.type==='vcard'?((v.nom||'')+' '+(v.ape||'')).trim():String(v[h.type]||'').slice(0,40)}
+function buildForm(){
+var t=TYPES[S.type],v=S.vals[S.type]=S.vals[S.type]||{};
+$('#fields').innerHTML=t.f.map(function(f){
+var id='f-'+f.id,val=v[f.id]!=null?v[f.id]:(f.id==='sec'?'WPA':''),c,d=' aria-describedby="e-'+f.id+'"';
+if(f.k==='area')c='<label for="'+id+'">'+f.l+'</label><textarea id="'+id+'" rows="4" placeholder="'+esc(f.p||'')+'"'+d+'>'+esc(val)+'</textarea>';
+else if(f.k==='sel')c='<label for="'+id+'">'+f.l+'</label><select id="'+id+'">'+f.o.map(function(o){return'<option value="'+o[0]+'"'+(o[0]===val?' selected':'')+'>'+o[1]+'</option>'}).join('')+'</select>';
+else if(f.k==='chk')c='<label class="chk"><input type="checkbox" id="'+id+'"'+(val?' checked':'')+'>'+f.l+'</label>';
+else c='<label for="'+id+'">'+f.l+'</label><input type="'+(f.t||'text')+'" id="'+id+'" value="'+esc(val)+'" placeholder="'+esc(f.p||'')+'" autocomplete="off"'+(f.t==='tel'?' inputmode="tel"':'')+d+'>';
+return'<div class="field" id="w-'+f.id+'">'+c+'<p class="err" id="e-'+f.id+'" aria-live="polite"></p></div>'}).join('');
+$('#seg').innerHTML=Object.keys(TYPES).map(function(k){return'<button type="button" data-t="'+k+'" aria-pressed="'+(k===S.type)+'">'+TYPES[k].n+'</button>'}).join('')}
+function syncOpts(){$('#fg').value=S.opts.fg;$('#bg').value=S.opts.bg;$('#size').value=S.opts.size;$('#ec').value=S.opts.ec}
+function render(){
+var v=S.vals[S.type]||{},res=encode(S.type,v),e=res.e,se=chkSize(S.opts.size);
+TYPES[S.type].f.forEach(function(f){var p=$('#e-'+f.id),i=$('#f-'+f.id),m=(touched[f.id]||attempted)&&e[f.id]?e[f.id]:'';
+if(p)p.textContent=m;if(i)i.setAttribute('aria-invalid',m?'true':'false')});
+var w=$('#w-pass');if(w)w.hidden=v.sec==='nopass';
+$('#e-size').textContent=se;$('#size').setAttribute('aria-invalid',se?'true':'false');
+var img=$('#img'),ph=$('#ph'),bad=Object.keys(e).length||se;cur=null;
+['#tip','#code','#warn'].forEach(function(s){$(s).hidden=true});img.hidden=true;ph.hidden=false;$('#info').textContent='';
+if(typeof qrcode==='undefined'){ph.textContent='No se pudo cargar la librería de QR. Comprueba la conexión y recarga la página.';return}
+if(bad||!res.s){ph.textContent='Completa los datos para ver el código.';return}
+try{var q=build(res.s,S.opts.ec),c=paint(q,S.opts,+S.opts.size),n=q.getModuleCount();
+img.src=c.toDataURL('image/png');img.width=c.width;img.hidden=false;ph.hidden=true;$('#tip').hidden=false;
+$('#info').textContent='Versión '+((n-17)/4)+' · '+n+'×'+n+' módulos · imagen de '+c.width+'×'+c.width+' px';
+var cd=$('#code');cd.textContent=res.s;cd.hidden=false;cur=res.s;
+var wn=$('#warn');if(lum(S.opts.fg)>=lum(S.opts.bg)){wn.textContent='El código es más claro que el fondo: muchos lectores no lo reconocen. Usa un código oscuro sobre fondo claro.';wn.hidden=false}
+else if(ratio(S.opts.fg,S.opts.bg)<4){wn.textContent='Contraste bajo entre código y fondo: puede costar escanearlo.';wn.hidden=false}}
+catch(x){ph.textContent='Hay demasiado contenido para este nivel de corrección. Acorta el texto o baja el nivel.'}}
+function thumb(h){try{var s=encode(h.type,h.vals).s;if(!s)return'';return paint(build(s,h.opts.ec),h.opts,112).toDataURL()}catch(e){return''}}
+function renderHist(){
+var ul=$('#hist');
+if(!S.hist.length){ul.innerHTML='<li class="hint">Aún no hay códigos guardados. Pulsa «Guardar en el historial» para añadir el actual.</li>';$('#clear').hidden=true;return}
+$('#clear').hidden=false;
+ul.innerHTML=S.hist.map(function(h,i){
+return'<li class="hi"><button type="button" class="open" data-o="'+i+'"><img src="'+thumb(h)+'" alt=""><span><b>'+TYPES[h.type].n+'</b>'+(h.ex?'<span class="badge">Ejemplo</span>':'')+'<br><small>'+esc(summary(h))+' · '+fmt(h.d)+'</small></span></button>'
++'<button type="button" data-d="'+i+'" aria-label="Borrar '+TYPES[h.type].n+(h.ex?' de ejemplo':'')+' del historial">Borrar</button></li>'}).join('')}
+function refresh(){buildForm();syncOpts();render();renderHist()}
+$('#seg').addEventListener('click',function(ev){var b=ev.target.closest('[data-t]');if(!b)return;S.type=b.dataset.t;touched={};attempted=false;save();buildForm();render()});
+$('#fields').addEventListener('input',function(ev){var el=ev.target,id=el.id.slice(2);
+(S.vals[S.type]=S.vals[S.type]||{})[id]=el.type==='checkbox'?el.checked:el.value;touched[id]=1;save();render()});
+['fg','bg','size','ec'].forEach(function(k){$('#'+k).addEventListener('input',function(ev){S.opts[k]=ev.target.value;save();render()})});
+$('#save').addEventListener('click',function(){
+attempted=true;render();var m=$('#msg');
+if(!cur){m.textContent='Corrige los campos marcados antes de guardar.';return}
+S.hist.unshift({id:Date.now(),type:S.type,vals:Object.assign({},S.vals[S.type]),opts:Object.assign({},S.opts),d:new Date().toISOString()});
+S.hist=S.hist.slice(0,30);save();renderHist();m.textContent='Guardado en el historial.'});
+$('#hist').addEventListener('click',function(ev){
+var o=ev.target.closest('[data-o]'),d=ev.target.closest('[data-d]');
+if(d){S.hist.splice(+d.dataset.d,1);save();renderHist();$('#msg').textContent='Código borrado del historial.';return}
+if(o){var h=S.hist[+o.dataset.o];S.type=h.type;S.vals[h.type]=Object.assign({},h.vals);S.opts=Object.assign({},h.opts);touched={};attempted=false;save();buildForm();syncOpts();render();$('#msg').textContent='Código cargado desde el historial.';window.scrollTo({top:0})}});
+var armed=0;
+$('#clear').addEventListener('click',function(){var b=$('#clear');
+if(!armed){armed=1;b.textContent='Pulsa de nuevo para confirmar';setTimeout(function(){armed=0;b.textContent='Borrar todo el historial'},4000);return}
+armed=0;b.textContent='Borrar todo el historial';S.hist=[];save();renderHist();$('#msg').textContent='Historial borrado.'});
+refresh();
+})();
+</script>
+</body>
+</html>
